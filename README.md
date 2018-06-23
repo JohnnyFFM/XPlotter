@@ -1,6 +1,6 @@
 # XPlotter
 
-CPU plotter for BURST
+CPU plotter for BURST - creates optimized PoC2 plot files
 
 ## Usage
 
