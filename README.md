@@ -20,7 +20,7 @@ XPlotter.exe -id 17559140197979902351 -sn 0 -n 20000 -t 2 -path F:\burst\plots -
 -path: Path to your Plots.
 -mem: Amount of RAM to use while plotting.
 -low: Sets priority of XPlotter to 'below normal'
--poc2: Enables POC2 plotting.
+-poc1: Enables PoC1 plotting (legacy plot file format).
 ```
 
 ## Threads
