@@ -172,7 +172,8 @@
       <CompileAs>Default</CompileAs>
       <SDLCheck>true</SDLCheck>
       <StructMemberAlignment>Default</StructMemberAlignment>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
