@@ -103,6 +103,16 @@ extern "C" {
     unsigned out_size;
   } mshabal256_context;
 
+
+#pragma pack(1)
+  typedef struct {
+	  mshabal_u32 state[(12 + 16 + 16) * 4 * MSHABAL256_FACTOR];
+	  mshabal_u32 Whigh, Wlow;
+	  unsigned out_size;
+  } mshabal256_context_fast;
+
+#pragma pack()
+
   /*
    * Initialize a context structure. The output size must be a multiple
    * of 32, between 32 and 512 (inclusive). The output size is expressed
@@ -155,6 +165,11 @@ extern "C" {
     unsigned n,
     void *dst0, void *dst1, void *dst2, void *dst3,
     void *dst4, void *dst5, void *dst6, void *dst7);
+  
+  void simd256_mshabal_openclose_fast(mshabal256_context_fast *sc,
+	void *message, void *termination,
+	void *dst0, void *dst1, void *dst2, void *dst3, void *dst4, void *dst5, void *dst6, void *dst7,
+	unsigned n);
 
 #ifdef  __cplusplus
 }
