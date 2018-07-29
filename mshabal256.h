@@ -82,6 +82,7 @@ extern "C" {
 #endif
 
 #define MSHABAL256_FACTOR 2
+#define MSHABAL256_VECTOR_SIZE 8
 
   /*
    * The context structure for a Shabal computation. Contents are
@@ -106,8 +107,8 @@ extern "C" {
 
 #pragma pack(1)
   typedef struct {
-	  mshabal_u32 state[(12 + 16 + 16) * 4 * MSHABAL256_FACTOR];
-	  mshabal_u32 Whigh, Wlow;
+	  mshabal256_u32 state[(12 + 16 + 16) * 4 * MSHABAL256_FACTOR];
+	  mshabal256_u32 Whigh, Wlow;
 	  unsigned out_size;
   } mshabal256_context_fast;
 
@@ -166,10 +167,20 @@ extern "C" {
     void *dst0, void *dst1, void *dst2, void *dst3,
     void *dst4, void *dst5, void *dst6, void *dst7);
   
-  void simd256_mshabal_openclose_fast(mshabal256_context_fast *sc,
-	void *message, void *termination,
-	void *dst0, void *dst1, void *dst2, void *dst3, void *dst4, void *dst5, void *dst6, void *dst7,
-	unsigned n);
+  /*
+  * Optimised Shabal Routine for Burstcoin Plotting
+  * sc:				optimised shabal context, not containing any data buffers
+  * message:		message to be hashed. message should be a multiple of 512 bit (a shabal "message block"). a reminder would need to be stored in termination string.
+  * termination:	512 bit termination string. comprises of a msg reminder (if any), one bit for termination set to 1 and all remaining bit set to 0
+  * 
+  * The Shabal output is written out in the area pointed to by dst. Output is still paritioned in 32bit words and vectorized.
+  * An unpacking should only take place after the full nonce has been generated. 
+  *
+  * After this call, the context structure is invalid. The caller shall
+  * release it, or reinitialize it with mshabal256_init() or load a copy of a virgin context. 
+  * The mshabal256_close() function does NOT imply a hidden call to mshabal256_init().
+  */
+  void simd256_mshabal_openclose_fast(mshabal256_context_fast *sc, void *message, void *termination, void *dst, unsigned len);
 
 #ifdef  __cplusplus
 }

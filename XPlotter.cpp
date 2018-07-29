@@ -254,12 +254,12 @@ int main(int argc, char* argv[])
 	}
 
 #ifdef __AVX2__
-	char const *const version = "v1.31_AVX2";
+	char const *const version = "v1.40_AVX2";
 #else
 #ifdef __AVX__
-	char const *const version = "v1.31_AVX";
+	char const *const version = "v1.40_AVX";
 #else
-	char const *const version = "v1.31_SSE";
+	char const *const version = "v1.40_SSE";
 #endif
 #endif 
 

@@ -531,10 +531,9 @@ extern "C" {
 
   static void
 	  simd256_mshabal_compress_fast(mshabal256_context_fast *sc,
-		  void *u1, void *u2,
+		  void *message, void *termination,
 		  size_t num)
   {
-	  //_mm256_zeroupper();
 	  union input {
 		  u32 words[64 * MSHABAL256_FACTOR];
 		  __m256i data[16];
@@ -553,11 +552,10 @@ extern "C" {
 	  one = _mm256_set1_epi32(C32(0xFFFFFFFF));
 
 
-	  // Round 1/5
-#define M(i)   _mm256_load_si256((*(union input *)u1).data + (i))
+	  // Initial Rounds //data not moving issue tdo
+#define M(i)   _mm256_loadu_si256((__m256i *)message + i ) 
 
 	  while (num-- > 0) {
-
 		  for (j = 0; j < 16; j++)
 			  B[j] = _mm256_add_epi32(B[j], M(j));
 
@@ -696,13 +694,16 @@ extern "C" {
 		  SWAP_AND_SUB256(B[0xD], C[0xD], M(0xD));
 		  SWAP_AND_SUB256(B[0xE], C[0xE], M(0xE));
 		  SWAP_AND_SUB256(B[0xF], C[0xF], M(0xF));
+
+		  //move data pointer
+		  (__m256i *)message += 16;
+
 		  if (++sc->Wlow == 0)
 			  sc->Whigh++;
-
 	  }
 
 	  // Round 2-5
-#define M2(i)   _mm256_load_si256((*(union input *)u2).data + (i))
+#define M2(i)   _mm256_load_si256((__m256i *)termination + i)
 
 	  for (int k = 0;k < 4;k++)
 	  {
@@ -840,46 +841,21 @@ extern "C" {
   }
 
 
-
-	void
-		simd256_mshabal_openclose_fast(mshabal256_context_fast *sc,
-			void *u1, void *u2,
-			void *dst0, void *dst1, void *dst2, void *dst3, void *dst4, void *dst5, void *dst6, void *dst7,
-			unsigned n)
+//the maybe most useless just forwarding function
+  void simd256_mshabal_openclose_fast(mshabal256_context_fast *sc, void *message, void *termination, void *dst, unsigned len)
 	{
 		unsigned z, off, out_size_w32;
 		//run shabal
-		simd256_mshabal_compress_fast(sc, u1, u2, 1);
-		//extract results
+		simd256_mshabal_compress_fast(sc, message, termination, len);
+		
+		// calc pointer to result
 		out_size_w32 = sc->out_size >> 5;
 		off = MSHABAL256_FACTOR * 4 * (28 + (16 - out_size_w32));
-		for (z = 0; z < out_size_w32; z++) {
-			unsigned y = off + MSHABAL256_FACTOR * (z << 2);
-			((u32 *)dst0)[z] = sc->state[y + 0];
-			((u32 *)dst1)[z] = sc->state[y + 1];
-			((u32 *)dst2)[z] = sc->state[y + 2];
-			((u32 *)dst3)[z] = sc->state[y + 3];
-			((u32 *)dst4)[z] = sc->state[y + 4];
-			((u32 *)dst5)[z] = sc->state[y + 5];
-			((u32 *)dst6)[z] = sc->state[y + 6];
-			((u32 *)dst7)[z] = sc->state[y + 7];
-		}
+		
+		// copy final state into buffer --> idea: use buffer directly
+		memcpy(dst, &(sc->state[off]), MSHABAL256_VECTOR_SIZE*32);
+
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
