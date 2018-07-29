@@ -163,7 +163,7 @@ namespace AVX2
 		char *final = new char[32];
 
 		// vars (SIMD)
-		mshabal256_context_fast mx;
+		mshabal256_context_fast *mx = new mshabal256_context_fast[sizeof(mshabal256_context_fast)];
 		unsigned __int64 nonce1, nonce2, nonce3, nonce4, nonce5, nonce6, nonce7, nonce8;
 		char *buffer = new char[MSHABAL256_VECTOR_SIZE*PLOT_SIZE];
 		char *finalbuffer = new char[MSHABAL256_VECTOR_SIZE*HASH_SIZE];
@@ -252,16 +252,16 @@ namespace AVX2
 		shabal_context *init_x = new shabal_context[sizeof(shabal_context)];
 		shabal_init(init_x, 256);
 		//shabal_context *x = new shabal_context[sizeof(shabal_context)];
-		mshabal256_context init_mx;
-		mshabal256_init(&init_mx, 256);
+		mshabal256_context *init_mx = new mshabal256_context[sizeof(mshabal256_context)];
+		mshabal256_init(init_mx, 256);
 
 		// create minimal context for optimised shabal routine
-		mshabal256_context_fast mx_fast;
-		mx_fast.out_size = init_mx.out_size;
+		mshabal256_context_fast *mx_fast = new mshabal256_context_fast[sizeof(mshabal256_context_fast)];;
+		(*mx_fast).out_size = (*init_mx).out_size;
 		for (int j = 0;j<352;j++)
-			mx_fast.state[j] = init_mx.state[j];
-		mx_fast.Whigh = init_mx.Whigh;
-		mx_fast.Wlow = init_mx.Wlow;
+			(*mx_fast).state[j] = (*init_mx).state[j];
+		(*mx_fast).Whigh = (*init_mx).Whigh;
+		(*mx_fast).Wlow = (*init_mx).Wlow;
 
 		for (unsigned long long n = 0; n < local_nonces;)
 		{
@@ -309,8 +309,8 @@ namespace AVX2
 				// case 3: round > 128: use termination string 3
 
 				// round 1
-				memcpy(&mx, &mx_fast, sizeof(mx_fast));		// fast initialize shabal
-				simd256_mshabal_openclose_fast(&mx, &buffer[MSHABAL256_VECTOR_SIZE * PLOT_SIZE], &t1, &buffer[MSHABAL256_VECTOR_SIZE*(PLOT_SIZE - HASH_SIZE)], 16 >> 6);
+				memcpy(mx, mx_fast, sizeof(*mx_fast));		// fast initialize shabal
+				simd256_mshabal_openclose_fast(mx, &buffer[MSHABAL256_VECTOR_SIZE * PLOT_SIZE], &t1, &buffer[MSHABAL256_VECTOR_SIZE*(PLOT_SIZE - HASH_SIZE)], 16 >> 6);
 	
 				// store first hash into smart termination string 2 (data is vectored and SIMD aligned)
 				memcpy(&t2, &buffer[MSHABAL256_VECTOR_SIZE * (PLOT_SIZE - HASH_SIZE)], MSHABAL256_VECTOR_SIZE * (HASH_SIZE));
@@ -319,17 +319,17 @@ namespace AVX2
 				for (size_t i = PLOT_SIZE-HASH_SIZE; i > (PLOT_SIZE-HASH_CAP); i -= HASH_SIZE)
 				{
 					// fast initialize shabal
-					memcpy(&mx, &mx_fast, sizeof(mx_fast));		
+					memcpy(mx, mx_fast, sizeof(*mx_fast));		
 					// check if msg can be divided into 512bit packages without a reminder
 					if (i % 64 == 0)							
 					{						
 						// last msg = seed + termination
-						simd256_mshabal_openclose_fast(&mx, &buffer[i * MSHABAL256_VECTOR_SIZE], &t1, &buffer[(i - HASH_SIZE) * MSHABAL256_VECTOR_SIZE], (PLOT_SIZE + 16 - i) >> 6);
+						simd256_mshabal_openclose_fast(mx, &buffer[i * MSHABAL256_VECTOR_SIZE], &t1, &buffer[(i - HASH_SIZE) * MSHABAL256_VECTOR_SIZE], (PLOT_SIZE + 16 - i) >> 6);
 					}
 					else 
 					{
 						// last msg = 256 bit data + seed + termination
-						simd256_mshabal_openclose_fast(&mx, &buffer[i * MSHABAL256_VECTOR_SIZE], &t2, &buffer[(i - HASH_SIZE) * MSHABAL256_VECTOR_SIZE], (PLOT_SIZE + 16 - i) >> 6);
+						simd256_mshabal_openclose_fast(mx, &buffer[i * MSHABAL256_VECTOR_SIZE], &t2, &buffer[(i - HASH_SIZE) * MSHABAL256_VECTOR_SIZE], (PLOT_SIZE + 16 - i) >> 6);
 					}
 				}
 
@@ -337,17 +337,17 @@ namespace AVX2
 				for (size_t i = PLOT_SIZE - HASH_CAP; i > 0; i -= HASH_SIZE)
 				{
 					// fast initialize shabal
-					memcpy(&mx, &mx_fast, sizeof(mx_fast));
+					memcpy(mx, mx_fast, sizeof(*mx_fast));
 					// last msg = termination
-					simd256_mshabal_openclose_fast(&mx, &buffer[i * MSHABAL256_VECTOR_SIZE], &t3, &buffer[(i - HASH_SIZE) * MSHABAL256_VECTOR_SIZE], (HASH_CAP) >> 6);
+					simd256_mshabal_openclose_fast(mx, &buffer[i * MSHABAL256_VECTOR_SIZE], &t3, &buffer[(i - HASH_SIZE) * MSHABAL256_VECTOR_SIZE], (HASH_CAP) >> 6);
 
 				}
 
 				// generate final hash
 
 				// fast initialize shabal
-				memcpy(&mx, &mx_fast, sizeof(mx_fast));		
-				simd256_mshabal_openclose_fast(&mx, &buffer[0], &t1, &finalbuffer[0], (PLOT_SIZE + 16) >> 6);
+				memcpy(mx, mx_fast, sizeof(*mx_fast));		
+				simd256_mshabal_openclose_fast(mx, &buffer[0], &t1, &finalbuffer[0], (PLOT_SIZE + 16) >> 6);
 
 				// XOR using SIMD
 				// load final hash 
@@ -430,14 +430,11 @@ namespace AVX2
 		delete[] gendata7;
 		delete[] gendata8;
 		delete[] finalbuffer;
-		delete[] &t1;
-		delete[] &t2;
-		delete[] &t3;
 
 		delete[] init_x;
-		delete[] &mx;
-		delete[] &init_mx;
-
+		delete[] mx;
+		delete[] init_mx;
+		delete[] mx_fast;
 
 		return;
 	}
