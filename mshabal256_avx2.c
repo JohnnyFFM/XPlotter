@@ -853,7 +853,7 @@ extern "C" {
 		off = MSHABAL256_FACTOR * 4 * (28 + (16 - out_size_w32));
 		
 		// copy final state into buffer --> idea: use buffer directly
-		memcpy(dst, &(sc->state[off]), MSHABAL256_VECTOR_SIZE*32);
+			memcpy(dst, &(sc->state[off]), MSHABAL256_VECTOR_SIZE*32);
 
 	}
 

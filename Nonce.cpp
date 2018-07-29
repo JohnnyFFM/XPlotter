@@ -2,6 +2,7 @@
 #include "shabal.h"
 #include "mshabal.h"
 #include "mshabal256.h"
+#include "intrin.h"
 
 
 
@@ -154,44 +155,42 @@ namespace AVX2
 {
 	void work_i(const size_t local_num, unsigned long long loc_addr, const unsigned long long local_startnonce, const unsigned long long local_nonces)
 	{
+		// vars (non SIMD)
+		shabal_context *x = new shabal_context[sizeof(shabal_context)];
 		unsigned long long nonce;
-		unsigned long long nonce1;
-		unsigned long long nonce2;
-		unsigned long long nonce3;
-		unsigned long long nonce4;
-		unsigned long long nonce5;
-		unsigned long long nonce6;
-		unsigned long long nonce7;
-		unsigned long long nonce8;
-
-		// buffer (non SIMD)
-		char *final = new char[32];
+		size_t len;
 		char *gendata = new char[16 + PLOT_SIZE];
+		char *final = new char[32];
 
-		// buffers (SIMD)
+		// vars (SIMD)
+		mshabal256_context_fast mx;
+		unsigned __int64 nonce1, nonce2, nonce3, nonce4, nonce5, nonce6, nonce7, nonce8;
 		char *buffer = new char[MSHABAL256_VECTOR_SIZE*PLOT_SIZE];
 		char *finalbuffer = new char[MSHABAL256_VECTOR_SIZE*HASH_SIZE];
-
-		size_t len;
-		shabal_context *x = new shabal_context[sizeof(shabal_context)];
-		mshabal256_context_fast mx;
-		
 		char seed[32]; // 64bit account ID, 64bit nonce (blank), 1bit termination, 127 bits zero
 		char term[32]; // 1bit 1, 255bit of zeros
 		char zero[32]; // 256bit of zeros
+		char *gendata1 = new char[PLOT_SIZE];
+		char *gendata2 = new char[PLOT_SIZE];
+		char *gendata3 = new char[PLOT_SIZE];
+		char *gendata4 = new char[PLOT_SIZE];
+		char *gendata5 = new char[PLOT_SIZE];
+		char *gendata6 = new char[PLOT_SIZE];
+		char *gendata7 = new char[PLOT_SIZE];
+		char *gendata8 = new char[PLOT_SIZE];
 		
-		//create seed
-		memmove(&seed[0], &loc_addr, 8);
+		// create seed
+		unsigned __int64 accountid;
+		accountid = _byteswap_uint64((unsigned __int64)loc_addr);	//change endianess
+		memmove(&seed[0], &accountid, 8);
 		memset(&seed[8], 0, 8);
-		seed[16] = -128;
+		seed[16] = -128;											// shabal message termination bit
 		memset(&seed[17], 0, 15);
-		//create zero
+		// create zero
 		memset(&zero[0], 0, 32);
-		//create term
-		term[0] = -128;
+		// create term
+		term[0] = -128;												// shabal message termination bit
 		memset(&term[1], 0, 31);
-
-
 
 		// prepare smart SIMD aligned termination strings 
 		// creation could further be optimized, but not much in it as it only runs once per work package
@@ -249,12 +248,14 @@ namespace AVX2
 			t3.words[j + 7 + 64] = *(mshabal_u32 *)(zero + o);
 		}
 
+		// create shabal contexts, creation could also be moved to plotter start and only be done once (optimisation)
 		shabal_context *init_x = new shabal_context[sizeof(shabal_context)];
 		shabal_init(init_x, 256);
+		//shabal_context *x = new shabal_context[sizeof(shabal_context)];
 		mshabal256_context init_mx;
 		mshabal256_init(&init_mx, 256);
 
-		//create minimal context
+		// create minimal context for optimised shabal routine
 		mshabal256_context_fast mx_fast;
 		mx_fast.out_size = init_mx.out_size;
 		for (int j = 0;j<352;j++)
@@ -265,20 +266,20 @@ namespace AVX2
 		for (unsigned long long n = 0; n < local_nonces;)
 		{
 			// iterate nonces (8 per cycle - avx2)
-			// min 8 nonces left for avx 2 processing
+			// min 8 nonces left for avx 2 processing, otherwise SISD
 			if (n + 8 <= local_nonces)
 			{			
-				//generate nonce numbers
-				nonce1 = local_startnonce + n + 0;
-				nonce2 = local_startnonce + n + 1;
-				nonce3 = local_startnonce + n + 2;
-				nonce4 = local_startnonce + n + 3;
-				nonce5 = local_startnonce + n + 4;
-				nonce6 = local_startnonce + n + 5;
-				nonce7 = local_startnonce + n + 6;
-				nonce8 = local_startnonce + n + 7;
+				//generate nonce numbers & change endianness
+				nonce1 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 0));
+				nonce2 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 1));
+				nonce3 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 2));
+				nonce4 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 3));
+				nonce5 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 4));
+				nonce6 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 5));
+				nonce7 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 6));
+				nonce8 = _byteswap_uint64((unsigned __int64)(local_startnonce + n + 7));
 
-				//store nonce numbers in termination string
+				//store nonce numbers in relevant termination strings
 				for (int j = 16; j < 64 * MSHABAL256_FACTOR / 4; j += 4 * MSHABAL256_FACTOR) {
 					size_t o = j / MSHABAL256_FACTOR - 8;
 					// t1
@@ -302,10 +303,10 @@ namespace AVX2
 
 				//start shabal rounds
 
-				// 3 cases: first 128 rounds it is 1 or 2, after that 3
-				// 1. first 128 rounds, hashes are even: use termination string 1 
-				// 2. first 128 rounds, hashes are odd: use termination string 2 
-				// 3. round > 128: termination string 3
+				// 3 cases: first 128 rounds uses case 1 or 2, after that case 3
+				// case 1: first 128 rounds, hashes are even: use termination string 1 
+				// case 2: first 128 rounds, hashes are odd: use termination string 2 
+				// case 3: round > 128: use termination string 3
 
 				// round 1
 				memcpy(&mx, &mx_fast, sizeof(mx_fast));		// fast initialize shabal
@@ -343,7 +344,9 @@ namespace AVX2
 				}
 
 				// generate final hash
-				memcpy(&mx, &mx_fast, sizeof(mx_fast));		// fast initialize shabal
+
+				// fast initialize shabal
+				memcpy(&mx, &mx_fast, sizeof(mx_fast));		
 				simd256_mshabal_openclose_fast(&mx, &buffer[0], &t1, &finalbuffer[0], (PLOT_SIZE + 16) >> 6);
 
 				// XOR using SIMD
@@ -351,13 +354,34 @@ namespace AVX2
 				__m256i F[8];
 				for (int j = 0; j < 8; j++)
 					F[j] = _mm256_loadu_si256((__m256i *)finalbuffer + j);
-				// xor
-				for (int j = 0; j < 2*MSHABAL256_VECTOR_SIZE*HASH_SIZE; j++)
+				// xor all hashes with final hash
+				for (int j = 0; j < 8*2*HASH_CAP; j++)
 					_mm256_storeu_si256((__m256i *)buffer + j,_mm256_xor_si256(_mm256_loadu_si256((__m256i *)buffer + j), F[j % 8]));
 
-				// Just save unoptimized for now
-				memmove(cache[n*MSHABAL256_VECTOR_SIZE*PLOT_SIZE], &buffer[0], MSHABAL256_VECTOR_SIZE*PLOT_SIZE);
-				// TODO unpack / shuffle // optimize
+				// simd shabal words unpack
+				for (int j = 0;j < PLOT_SIZE; j += 4) {
+					memcpy(&gendata1[j], &buffer[j * 8 + 0], 4);
+					memcpy(&gendata2[j], &buffer[j * 8 + 4], 4);
+					memcpy(&gendata3[j], &buffer[j * 8 + 8], 4);
+					memcpy(&gendata4[j], &buffer[j * 8 + 12], 4);
+					memcpy(&gendata5[j], &buffer[j * 8 + 16], 4);
+					memcpy(&gendata6[j], &buffer[j * 8 + 20], 4);
+					memcpy(&gendata7[j], &buffer[j * 8 + 24], 4);
+					memcpy(&gendata8[j], &buffer[j * 8 + 28], 4);
+				}
+
+				// Sort them:
+				for (size_t i = 0; i < HASH_CAP; i++)
+				{
+					memmove(&cache[i][(n + 0 + local_num * local_nonces) * SCOOP_SIZE], &gendata1[i * SCOOP_SIZE], SCOOP_SIZE);
+					memmove(&cache[i][(n + 1 + local_num * local_nonces) * SCOOP_SIZE], &gendata2[i * SCOOP_SIZE], SCOOP_SIZE);
+					memmove(&cache[i][(n + 2 + local_num * local_nonces) * SCOOP_SIZE], &gendata3[i * SCOOP_SIZE], SCOOP_SIZE);
+					memmove(&cache[i][(n + 3 + local_num * local_nonces) * SCOOP_SIZE], &gendata4[i * SCOOP_SIZE], SCOOP_SIZE);
+					memmove(&cache[i][(n + 4 + local_num * local_nonces) * SCOOP_SIZE], &gendata5[i * SCOOP_SIZE], SCOOP_SIZE);
+					memmove(&cache[i][(n + 5 + local_num * local_nonces) * SCOOP_SIZE], &gendata6[i * SCOOP_SIZE], SCOOP_SIZE);
+					memmove(&cache[i][(n + 6 + local_num * local_nonces) * SCOOP_SIZE], &gendata7[i * SCOOP_SIZE], SCOOP_SIZE);
+					memmove(&cache[i][(n + 7 + local_num * local_nonces) * SCOOP_SIZE], &gendata8[i * SCOOP_SIZE], SCOOP_SIZE);
+				}
 				n += 8;
 			}
 			else
@@ -393,12 +417,27 @@ namespace AVX2
 			worker_status[local_num] = n;
 		}
 		delete[] final;
-		delete[] finalbuffer;
-		delete[] buffer;
+		delete[] gendata;
 		delete[] x;
+
+		delete[] buffer;
+		delete[] gendata1;
+		delete[] gendata2;
+		delete[] gendata3;
+		delete[] gendata4;
+		delete[] gendata5;
+		delete[] gendata6;
+		delete[] gendata7;
+		delete[] gendata8;
+		delete[] finalbuffer;
+		delete[] &t1;
+		delete[] &t2;
+		delete[] &t3;
+
+		delete[] init_x;
 		delete[] &mx;
 		delete[] &init_mx;
-		delete[] init_x;
+
 
 		return;
 	}
