@@ -7,10 +7,8 @@
     <owners>Jerome Bell</owners>
     <title>xplotter</title>
     <authors>JohnnyFFM</authors>
-    <!-- projectUrl is required for the community feed -->
     <projectUrl>https://github.com/JohnnyFFM/XPlotter</projectUrl>
     <copyright>Copyright (c) 2019</copyright>
-    <!-- If there is a license Url available, it is required for the community feed -->
     <licenseUrl>https://raw.githubusercontent.com/JohnnyFFM/XPlotter/master/LICENSE</licenseUrl>
     <projectSourceUrl>https://github.com/JohnnyFFM/XPlotter</projectSourceUrl>
     <tags>xplotter burstcoin mining</tags>
