@@ -1,0 +1,1 @@
+﻿Install-ChocolateyZipPackage -packagename XPlotter -unziplocation $env:ChocolateyPackageFolder  -Url 'https://github.com/JohnnyFFM/XPlotter/releases/download/v.1.31/XPlotter_v.1.31.zip' -checksum '1ec5d1983271d152f4414fb0bdabbe741b30971e6d92ca8663917a0c6ffff37a' -checksumtype 'sha256'

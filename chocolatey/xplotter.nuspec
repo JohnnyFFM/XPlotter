@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>xplotter</id>
+    <version>1.31.0</version>
+    <packageSourceUrl>https://github.com/JohnnyFFM/XPlotter</packageSourceUrl>
+    <owners>Jerome Bell</owners>
+    <title>xplotter</title>
+    <authors>JohnnyFFM</authors>
+    <projectUrl>https://github.com/JohnnyFFM/XPlotter</projectUrl>
+    <copyright>Copyright (c) 2019</copyright>
+    <licenseUrl>https://raw.githubusercontent.com/JohnnyFFM/XPlotter/master/LICENSE</licenseUrl>
+    <projectSourceUrl>https://github.com/JohnnyFFM/XPlotter</projectSourceUrl>
+    <tags>xplotter burstcoin mining</tags>
+    <summary>CPU plotter for BURST - creates optimized PoC2 plot files</summary>
+    <description>CPU plotter for BURST - creates optimized PoC2 plot files</description>
+    <releaseNotes>Set POC2 as default, added parameter -poc1 for legacy plotting.</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

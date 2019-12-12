@@ -41,3 +41,4 @@ Debug/
 *.vcxproj.user
 *.suo
 /0_0_1000000
+/chocolatey/*.nupkg
