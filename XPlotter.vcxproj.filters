@@ -24,10 +24,10 @@
     <ClInclude Include="shabal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="curses.h">
+    <ClInclude Include="panel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="panel.h">
+    <ClInclude Include="CpuInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -48,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mshabal256_avx2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CpuInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

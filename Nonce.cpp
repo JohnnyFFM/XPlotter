@@ -2,6 +2,7 @@
 #include "shabal.h"
 #include "mshabal.h"
 #include "mshabal256.h"
+#include <intrin.h>
 
 
 
