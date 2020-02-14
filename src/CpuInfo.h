@@ -3,7 +3,6 @@
 class CpuInfo {
 public:
   explicit CpuInfo();
-  std::string vendor() const { return _vendor; }
   std::string model() const { return _model; }
   bool hasSSE() const { return _hasSSE; }
   bool hasSSE2() const { return _hasSSE2; }
@@ -26,7 +25,6 @@ private:
   static const uint32_t MAX_INTEL_TOP_LVL = 4;
 
   // Attributes
-  std::string _vendor;
   std::string _model;
   bool _hasSSE;
   bool _hasSSE2;

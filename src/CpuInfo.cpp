@@ -9,8 +9,8 @@ class CPUID {
   uint32_t regs[4];
 
 public:
-  explicit CPUID(unsigned funcId, unsigned subFuncId) {
-    __cpuidex((int *)regs, (int)funcId, (int)subFuncId);
+  explicit CPUID(int funcId, int subFuncId) {
+    __cpuidex((int *)regs, funcId, subFuncId);
   }
 
   const uint32_t &EAX() const { return regs[0]; }
@@ -20,23 +20,17 @@ public:
 };
 
 CpuInfo::CpuInfo() {
-  CPUID cpuID0(0, 0);
-  uint32_t HFS = cpuID0.EAX();
-  _vendor += string((const char *)&cpuID0.EBX(), 4);
-  _vendor += string((const char *)&cpuID0.EDX(), 4);
-  _vendor += string((const char *)&cpuID0.ECX(), 4);
   CPUID cpuID1(1, 0);
+  CPUID cpuID7(7, 0);
+
   _hasSSE = cpuID1.EDX() & SSE_POS;
   _hasSSE2 = cpuID1.EDX() & SSE2_POS;
   _hasSSE3 = cpuID1.ECX() & SSE3_POS;
   _hasSSE41 = cpuID1.ECX() & SSE41_POS;
   _hasSSE42 = cpuID1.ECX() & SSE41_POS;
   _hasAVX = cpuID1.ECX() & AVX_POS;
-  CPUID cpuID7(7, 0);
-  _hasAVX2 = cpuID7.EBX() & AVX2_POS;
 
-  string upVId = _vendor;
-  for_each(upVId.begin(), upVId.end(), [](char &in) { in = ::toupper(in); });
+  _hasAVX2 = cpuID7.EBX() & AVX2_POS;
 
   // Get processor brand string
   // This seems to be working for both Intel & AMD vendors
