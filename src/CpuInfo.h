@@ -1,7 +1,7 @@
 #include <string>
 
 class CpuInfo {
- public:
+public:
   explicit CpuInfo();
   std::string vendor() const { return _vendor; }
   std::string model() const { return _model; }
@@ -13,7 +13,7 @@ class CpuInfo {
   bool hasAVX() const { return _hasAVX; }
   bool hasAVX2() const { return _hasAVX2; }
 
- private:
+private:
   // Bit positions for data extractions
   static const uint32_t SSE_POS = 0x02000000;
   static const uint32_t SSE2_POS = 0x04000000;

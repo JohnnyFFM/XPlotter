@@ -31,7 +31,7 @@ unsigned long long written_scoops = 0;
 bool poc2 = true;
 
 double written_scoops_time = 0.01;
-int supports_streams = -1;  // undefined
+int supports_streams = -1; // undefined
 std::thread writer;
 
 void printColouredMessage(const std::string &message, WORD colour) {
@@ -48,9 +48,9 @@ void printLastError(const std::string &message) {
 
 BOOL SetPrivilege(void) {
   LUID luid;
-  if (!LookupPrivilegeValue(NULL,  // lookup privilege on local system
-                            SE_MANAGE_VOLUME_NAME,  // privilege to lookup
-                            &luid))  // receives LUID of privilege
+  if (!LookupPrivilegeValue(NULL, // lookup privilege on local system
+                            SE_MANAGE_VOLUME_NAME, // privilege to lookup
+                            &luid))                // receives LUID of privilege
   {
     printLastError("LookupPrivilegeValue error:");
     return FALSE;
@@ -140,7 +140,8 @@ void writer_i(const unsigned long long offset,
     }
     written_scoops = scoop + 1;
   }
-  if (supports_streams == 1) write_to_stream(offset + nonces_to_write);
+  if (supports_streams == 1)
+    write_to_stream(offset + nonces_to_write);
   return;
 }
 
@@ -203,10 +204,10 @@ int drive_info(const std::string &path) {
     printf("\tFile system: %s\n", SysNameBuffer);
     printf("\tSerial Number: %lu\n", VSNumber);
     if (FileSF & FILE_NAMED_STREAMS) {
-      printf("\tFILE_NAMED_STREAMS: yes\n");  // File system supports streams
+      printf("\tFILE_NAMED_STREAMS: yes\n"); // File system supports streams
       return 1;
     } else {
-      printf("\tFILE_NAMED_STREAMS: no\n");  // Streams are not supported
+      printf("\tFILE_NAMED_STREAMS: no\n"); // Streams are not supported
       return 0;
     }
   }
@@ -289,10 +290,9 @@ int main(int argc, char *argv[]) {
   printf("\t\tPOC2 modder: Johnny (5/2018)\n\n");
   SetConsoleTextAttribute(hConsole, colour::GRAY);
   if (argc < 2) {
-    printf(
-        "Usage: %s -id <ID> -sn <start_nonce> [-n <nonces>] -t <threads> "
-        "[-path <d:\\plots>] [-mem <8G>] [-poc1] \n",
-        argv[0]);
+    printf("Usage: %s -id <ID> -sn <start_nonce> [-n <nonces>] -t <threads> "
+           "[-path <d:\\plots>] [-mem <8G>] [-poc1] \n",
+           argv[0]);
     printf("         <ID> = your numeric acount id\n");
     printf("         <start_nonce> = where you want to start plotting.\n");
     printf(
@@ -317,9 +317,10 @@ int main(int argc, char *argv[]) {
 
   SetConsoleTextAttribute(hConsole, colour::GRAY);
   std::vector<std::string> args(
-      argv, &argv[(size_t)argc]);  // copy all parameters to args
-  for (auto &it : args)            // make all parameters to lower case
-    for (auto &c : it) c = tolower(c);
+      argv, &argv[(size_t)argc]); // copy all parameters to args
+  for (auto &it : args)           // make all parameters to lower case
+    for (auto &c : it)
+      c = tolower(c);
 
   for (size_t i = 1; i < args.size(); i++) {
     if ((args[i] == "-id") && is_number(args[++i]))
@@ -330,22 +331,24 @@ int main(int argc, char *argv[]) {
       nonces = strtoull(args[i].c_str(), 0, 10);
     if ((args[i] == "-t") && is_number(args[++i]))
       threads = strtoull(args[i].c_str(), 0, 10);
-    if (args[i] == "-path") out_path = args[++i];
-    if (args[i] == "-poc1") poc2 = false;
+    if (args[i] == "-path")
+      out_path = args[++i];
+    if (args[i] == "-poc1")
+      poc2 = false;
     if (args[i] == "-mem") {
       i++;
       memory = strtoull(
           args[i].substr(0, args[i].find_last_of("0123456789") + 1).c_str(), 0,
           10);
       switch (args[i][args[i].length() - 1]) {
-        case 't':
-        case 'T':
-          memory *= 1024;
-        case 'g':
-        case 'G':
-          memory *= 1024;
-        case 'm':
-        case 'M':;
+      case 't':
+      case 'T':
+        memory *= 1024;
+      case 'g':
+      case 'G':
+        memory *= 1024;
+      case 'm':
+      case 'M':;
       }
     }
     if (args[i] == "-low") {
@@ -362,7 +365,8 @@ int main(int argc, char *argv[]) {
     std::string _path = Buffer;
     out_path = _path + "\\" + out_path;
   }
-  if (out_path.rfind('\\') < out_path.length() - 1) out_path += "\\";
+  if (out_path.rfind('\\') < out_path.length() - 1)
+    out_path += "\\";
 
   printf("Checking directory...\n");
   if (!CreateDirectoryA(out_path.c_str(), nullptr) &&
@@ -386,7 +390,8 @@ int main(int argc, char *argv[]) {
   printf("\tSectors per Cluster: %u\n", sectorsPerCluster);
 
   // whole free space
-  if (nonces == 0) nonces = getFreeSpace(out_path.c_str()) / PLOT_SIZE;
+  if (nonces == 0)
+    nonces = getFreeSpace(out_path.c_str()) / PLOT_SIZE;
 
   // ajusting nonces
   nonces =
@@ -413,7 +418,7 @@ int main(int argc, char *argv[]) {
           "Error creating stream for file " + out_path + filename, RED);
     } else
       nonces_done = read_from_stream();
-    if (nonces_done == nonces)  // exit
+    if (nonces_done == nonces) // exit
     {
       printColouredMessage(
           "File is already finished. Delete the existing file to start over",
@@ -429,10 +434,11 @@ int main(int argc, char *argv[]) {
       CreateFileA((out_path + filename).c_str(), GENERIC_WRITE,
                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0,
                   OPEN_ALWAYS, FILE_FLAG_NO_BUFFERING,
-                  nullptr);  // FILE_ATTRIBUTE_NORMAL FILE_FLAG_WRITE_THROUGH |
+                  nullptr); // FILE_ATTRIBUTE_NORMAL FILE_FLAG_WRITE_THROUGH |
   if (ofile == INVALID_HANDLE_VALUE) {
     printColouredMessage("Error creating file " + out_path + filename, RED);
-    if (ofile_stream) CloseHandle(ofile_stream);
+    if (ofile_stream)
+      CloseHandle(ofile_stream);
     exit(-1);
   }
 
@@ -442,20 +448,24 @@ int main(int argc, char *argv[]) {
   SetFilePointerEx(ofile, liDistanceToMove, nullptr, FILE_BEGIN);
   if (SetEndOfFile(ofile) == 0) {
     printLastError("Not enough free space, reduce \"nonces\"...");
-    if (ofile) CloseHandle(ofile);
-    if (ofile_stream) CloseHandle(ofile_stream);
+    if (ofile)
+      CloseHandle(ofile);
+    if (ofile_stream)
+      CloseHandle(ofile_stream);
     DeleteFileA((out_path + filename).c_str());
     exit(-1);
   }
   liDistanceToMove.QuadPart = 0;
   SetFilePointerEx(ofile, liDistanceToMove, nullptr, FILE_BEGIN);
 
-  if (granted)  // Houston, we have a problem
+  if (granted) // Houston, we have a problem
   {
     if (SetFileValidData(ofile, nonces * PLOT_SIZE) == 0) {
       printLastError("SetFileValidData error");
-      if (ofile) CloseHandle(ofile);
-      if (ofile_stream) CloseHandle(ofile_stream);
+      if (ofile)
+        CloseHandle(ofile);
+      if (ofile_stream)
+        CloseHandle(ofile_stream);
       exit(-1);
     }
   }
@@ -465,7 +475,7 @@ int main(int argc, char *argv[]) {
   if (memory)
     nonces_per_thread = memory * 2 / threads;
   else
-    nonces_per_thread = 1024;  //(bytesPerSector / SCOOP_SIZE) * 1024 / threads;
+    nonces_per_thread = 1024; //(bytesPerSector / SCOOP_SIZE) * 1024 / threads;
 
   if (nonces < nonces_per_thread * threads)
     nonces_per_thread = nonces / threads;
@@ -500,8 +510,10 @@ int main(int argc, char *argv[]) {
                              MEM_COMMIT, PAGE_READWRITE);
     if ((cache[i] == nullptr) || (cache_write[i] == nullptr)) {
       printLastError("Error allocating memory");
-      if (ofile) CloseHandle(ofile);
-      if (ofile_stream) CloseHandle(ofile_stream);
+      if (ofile)
+        CloseHandle(ofile);
+      if (ofile_stream)
+        CloseHandle(ofile_stream);
       exit(-1);
     }
   }
@@ -582,7 +594,8 @@ int main(int argc, char *argv[]) {
     SetConsoleTextAttribute(hConsole, colour::GRAY);
 
     for (auto it = workers.begin(); it != workers.end(); ++it)
-      if (it->joinable()) it->join();
+      if (it->joinable())
+        it->join();
     for (auto it = worker_status.begin(); it != worker_status.end(); ++it)
       *it = 0;
 
@@ -599,7 +612,8 @@ int main(int argc, char *argv[]) {
              written_scoops * 64 * nonces_in_work / 1024 /
                  (GetTickCount64() - written_scoops_time));
     }
-    if (writer.joinable()) writer.join();
+    if (writer.joinable())
+      writer.join();
 
     // swap buffers
     cache_write.swap(cache);
@@ -619,10 +633,11 @@ int main(int argc, char *argv[]) {
   printf(
       "\rWait, closing file...                                                 "
       "                           \n");
-  if (writer.joinable()) writer.join();
+  if (writer.joinable())
+    writer.join();
 
   FlushFileBuffers(
-      ofile);  // https://msdn.microsoft.com/en-en/library/windows/desktop/aa364218(v=vs.85).aspx
+      ofile); // https://msdn.microsoft.com/en-en/library/windows/desktop/aa364218(v=vs.85).aspx
   CloseHandle(ofile_stream);
   CloseHandle(ofile);
   printf("\rAll done. %llu seconds\n", (GetTickCount64() - start_timer) / 1000);

@@ -1,14 +1,14 @@
 #include "CpuInfo.h"
-#include <limits.h>
-#include <intrin.h>
 #include <algorithm>
+#include <intrin.h>
+#include <limits.h>
 
 using namespace std;
 
 class CPUID {
   uint32_t regs[4];
 
- public:
+public:
   explicit CPUID(unsigned funcId, unsigned subFuncId) {
     __cpuidex((int *)regs, (int)funcId, (int)subFuncId);
   }
